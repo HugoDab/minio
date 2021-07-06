@@ -936,6 +936,18 @@ var (
 			Value: "",
 		},
 		config.KV{
+			Key:   target.NATSJWT,
+			Value: "",
+		},
+		config.KV{
+			Key:   target.NATSSignature,
+			Value: "",
+		},
+		config.KV{
+			Key:   target.NATSCreds,
+			Value: "",
+		},
+		config.KV{
 			Key:   target.NATSPingInterval,
 			Value: "0",
 		},
@@ -1063,6 +1075,21 @@ func GetNotifyNATS(natsKVS map[string]config.KVS, rootCAs *x509.CertPool) (map[s
 			clientKeyEnv = clientKeyEnv + config.Default + k
 		}
 
+		jwtEnv := target.EnvNATSJWT
+		if k != config.Default {
+			jwtEnv = jwtEnv + config.Default + k
+		}
+
+		signatureEnv := target.EnvNATSSignature
+		if k != config.Default {
+			signatureEnv = signatureEnv + config.Default + k
+		}
+
+		credsEnv := target.EnvNATSCreds
+		if k != config.Default {
+			signatureEnv = signatureEnv + config.Default + k
+		}
+
 		natsArgs := target.NATSArgs{
 			Enable:        true,
 			Address:       *address,
@@ -1073,6 +1100,9 @@ func GetNotifyNATS(natsKVS map[string]config.KVS, rootCAs *x509.CertPool) (map[s
 			ClientCert:    env.Get(clientCertEnv, kv.Get(target.NATSClientCert)),
 			ClientKey:     env.Get(clientKeyEnv, kv.Get(target.NATSClientKey)),
 			Token:         env.Get(tokenEnv, kv.Get(target.NATSToken)),
+			JWT:           env.Get(jwtEnv, kv.Get(target.NATSJWT)),
+			Signature:     []byte(env.Get(signatureEnv, kv.Get(target.NATSSignature))),
+			Creds:         env.Get(credsEnv, kv.Get(target.NATSCreds)),
 			TLS:           env.Get(tlsEnv, kv.Get(target.NATSTLS)) == config.EnableOn,
 			TLSSkipVerify: env.Get(tlsSkipVerifyEnv, kv.Get(target.NATSTLSSkipVerify)) == config.EnableOn,
 			PingInterval:  pingInterval,

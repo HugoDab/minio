@@ -48,6 +48,9 @@ const (
 	NATSCertAuthority = "cert_authority"
 	NATSClientCert    = "client_cert"
 	NATSClientKey     = "client_key"
+	NATSJWT           = "jwt"
+	NATSSignature     = "signature"
+	NATSCreds         = "creds"
 
 	// Streaming constants
 	NATSStreaming                   = "streaming"
@@ -69,6 +72,9 @@ const (
 	EnvNATSCertAuthority = "MINIO_NOTIFY_NATS_CERT_AUTHORITY"
 	EnvNATSClientCert    = "MINIO_NOTIFY_NATS_CLIENT_CERT"
 	EnvNATSClientKey     = "MINIO_NOTIFY_NATS_CLIENT_KEY"
+	EnvNATSJWT           = "MINIO_NOTIFY_NATS_JWT"
+	EnvNATSSignature     = "MINIO_NOTIFY_NATS_SIGNATURE"
+	EnvNATSCreds         = "MINIO_NOTIFY_NATS_CREDS"
 
 	// Streaming constants
 	EnvNATSStreaming                   = "MINIO_NOTIFY_NATS_STREAMING"
@@ -91,6 +97,9 @@ type NATSArgs struct {
 	CertAuthority string    `json:"certAuthority"`
 	ClientCert    string    `json:"clientCert"`
 	ClientKey     string    `json:"clientKey"`
+	JWT           string    `json:"jwt"`
+	Creds         string    `json:"creds"`
+	Signature     []byte    `json:"signature"`
 	PingInterval  int64     `json:"pingInterval"`
 	QueueDir      string    `json:"queueDir"`
 	QueueLimit    uint64    `json:"queueLimit"`
@@ -161,6 +170,19 @@ func (n NATSArgs) connectNats() (*nats.Conn, error) {
 	if n.ClientCert != "" && n.ClientKey != "" {
 		connOpts = append(connOpts, nats.ClientCert(n.ClientCert, n.ClientKey))
 	}
+	if n.JWT != "" && n.Signature != nil {
+		userJWT := nats.UserJWTHandler(func() (string, error) {
+			return n.JWT, nil
+		})
+		userSignature := nats.SignatureHandler(func([]byte) ([]byte, error) {
+			return n.Signature, nil
+		})
+		connOpts = append(connOpts, nats.UserJWT(userJWT, userSignature))
+	}
+	if n.Creds != "" {
+		connOpts = append(connOpts, nats.UserCredentials(n.Creds))
+	}
+
 	return nats.Connect(n.Address.String(), connOpts...)
 }
 
